@@ -1,7 +1,7 @@
 {
   "name": "eco-plus",
   "description": "Eco templates extension.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Alex Kravets <santyor@gmail.com>",
   "contributors": [ 
     { "name": "Alex Kravets", "email": "santyor@gmail.com" }
@@ -11,5 +11,6 @@
     "eco": ">=1.0.0",
     "sugar": ">=0.9.5",
     "findit": ">=0.1.1"
-  }
+  },
+  "main": "./eco-plus.coffee"
 }
