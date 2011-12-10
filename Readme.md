@@ -5,6 +5,7 @@ which adds **include**, **parent** and **block** tags. These *special* tags allo
 # Example
 
 *layout.html*
+
 ```
 <html>
     <head>
@@ -17,6 +18,7 @@ which adds **include**, **parent** and **block** tags. These *special* tags allo
 ```
 
 *index.html*
+
 ```
 <% parent "layout" %>
 <% block "title" %>Page Title<% endblock %>
