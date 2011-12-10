@@ -1,7 +1,7 @@
 {
   "name": "eco-plus",
   "description": "Eco templates extension.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "Alex Kravets <santyor@gmail.com>",
   "contributors": [ 
     { "name": "Alex Kravets", "email": "santyor@gmail.com" }
