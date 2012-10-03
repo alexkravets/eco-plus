@@ -3,26 +3,33 @@ eco      = require 'eco'
 fs       = require 'fs'
 findit   = require 'findit'
 
+prefix = '(?:=|-)'
+quoted = (pattern, idx=1) -> "(\"|\')#{pattern}\\#{idx}"
+single_tag = (name, prefix='') -> 
+    new RegExp("<%#{prefix}\\s*#{name}\\s*%>", 'g')
+arg_tag = (name, argpattern='.*', prefix='') ->
+    new RegExp("<%#{prefix}\\s*#{name}\\s+#{quoted(argpattern)}\\s*%>", 'g')
 
-block_regex     = /<% ?block "(\w|\d|_)+" ?%>/g
-endblock_regex  = /<% ?endblock ?%>/g
-parent_regex    = /^<% ?parent "(\w|\d|_|\/)+" ?%>/g
-include_regex   = /<% ?include "(\w|\d|_|\/)+" ?%>/g
-
+patterns =
+    block: arg_tag('block', '(\\w|\\d|_)+')
+    endblock: single_tag('endblock')
+    parent: arg_tag('parent', '(\\w|\\d|_|\\/)+')
+    block_super: single_tag('block\\.super', prefix)
+    include: arg_tag('include', '(\\w|\\d|_|\\/)+', prefix)
 
 #
 # Get name from tag: <% block "main" %> name is gonna be "main"
 #
 get_name = (tag) ->
-    name_regex = /"(\w|\d|_|\/)+"/
-    return name_regex.exec(tag)[0].replace('"', '').replace('"', '')
+    name_regex = /("|')((?:\w|\d|_|\/)+)\1/
+    return name_regex.exec(tag)[2]
 
 
 #
 #
 #
 parse_includes = (src, templates) ->
-    tags = src.match(include_regex)
+    tags = src.match(patterns.include)
     while tags?
         tags.each (tag) ->
             name = get_name tag
@@ -44,7 +51,7 @@ parse_includes = (src, templates) ->
 get_block = (tag, src) ->
     block_start     = src.search(tag)
     tail            = src.substring(block_start)
-    endblock_start  = tail.search(endblock_regex)
+    endblock_start  = tail.search(patterns.endblock)
     endblock_end    = endblock_start + tail.substring(endblock_start).search('%>') + 2
     block           = tail.substring(0, endblock_end)
     return block
@@ -68,7 +75,7 @@ get_block = (tag, src) ->
 #
 read_blocks = (src) ->
     blocks  = {}
-    tags    = src.match(block_regex)
+    tags    = src.match(patterns.block)
     if tags
         tags.each (tag) ->
             name    = get_name(tag)
@@ -81,7 +88,7 @@ read_blocks = (src) ->
 # from provided blocks dictionary. Returns updated source.
 #
 replace_blocks = (src, blocks) ->
-    tags = src.match(block_regex)
+    tags = src.match(patterns.block)
     if tags
         tags.each (tag) ->
             name    = get_name(tag)
@@ -90,32 +97,47 @@ replace_blocks = (src, blocks) ->
                 src = src.replace(block, blocks[name])
 
     # Remove block tags
-    src = src.replace(block_regex, '').replace(endblock_regex, '')
+    src = src.replace(patterns.block, '').replace(patterns.endblock, '')
 
     return src
 
-
 parse_parents = (src, templates) ->
+    [src, blocks] = parse_parents_inner(src, templates)
+    return src
+
+
+parse_parents_inner = (src, templates) ->
+    # Read in a map of block_name => block_src and look for a parent
+    # declaration
     blocks = read_blocks(src)
-    tags = src.match(parent_regex)
+    tags = src.match(patterns.parent)
+    if not tags
+        return [src, blocks]
 
-    while tags?
-        name  = get_name tags.first()
+    parent_name = get_name tags.first()
+    if templates[parent_name]?
+        parent_src = templates[parent_name]
+    else
+        parent_src = "<p>Error: Template <b>#{ parent_name }</b> not found.</p>"
 
-        if templates[name]?
-            parent_src = templates[name]
-        else
-            parent_src = "<p>Error: Template <b>#{ name }</b> not found.</p>"
+    # Recursively process parent templates to determine what their blocks look
+    # like so we can use them in any super blocks.
+    [src, parent_blocks] = parse_parents_inner(parent_src, templates)
+    updated_blocks = {}
+    for name, block of blocks
+        # Look for parent inclusions and try to sub in parent blocks
+        while block.match(patterns.block_super)
+            match = block.match(patterns.block_super).first()
+            parent_blocks[name] or ''
+            block = block.replace(match, parent_blocks[name] or '')
+        updated_blocks[name] = block
+    blocks = updated_blocks
 
-        parent_blocks = read_blocks(parent_src)
-        blocks = Object.merge( parent_blocks, blocks)
-        tags = parent_src.match(parent_regex)
-
+    # Override parent blocks with child blocks
     if parent_src?
         src = parent_src
     src = replace_blocks(src, blocks)
-
-    return src
+    return [src, blocks]
 
 
 generate = (name, templates) ->
