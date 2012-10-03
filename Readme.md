@@ -21,7 +21,7 @@ which adds **include**, **parent** and **block** tags. These *special* tags allo
 
 ```
 <% parent "layout" %>
-<% block "title" %><%= parent %> | Page Title<% endblock %>
+<% block "title" %><%= block.super %> | Page Title<% endblock %>
 <% block "main" %>
   <% include "header" %>
   Page Content
