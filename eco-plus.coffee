@@ -5,7 +5,7 @@ findit   = require 'findit'
 
 prefix = '(?:=|-)'
 quoted = (pattern, idx=1) -> "(\"|\')#{pattern}\\#{idx}"
-single_tag = (name, prefix='') -> 
+single_tag = (name, prefix='') ->
     new RegExp("<%#{prefix}\\s*#{name}\\s*%>", 'g')
 arg_tag = (name, argpattern='.*', prefix='') ->
     new RegExp("<%#{prefix}\\s*#{name}\\s+#{quoted(argpattern)}\\s*%>", 'g')
@@ -164,10 +164,14 @@ module.exports =
   templates: (path) ->
     templates = {}
     findit.sync path, (f) ->
-      if f.endsWith('.html')
-        name = f.remove(path + '/').remove('.html')
-        src = fs.readFileSync(f, 'utf-8')
-        templates[name] = src
+      get_templates = (extension) ->
+        if f.endsWith(".#{extension}")
+          name = f.remove(path + '/').remove(".#{extension}")
+          src = fs.readFileSync(f, 'utf-8')
+          templates[name] = src
+
+      get_templates 'html'
+      get_templates 'eco'
     templates
   
   render_js: (templates, context) ->
