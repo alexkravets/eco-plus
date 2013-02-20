@@ -164,10 +164,14 @@ module.exports =
   templates: (path) ->
     templates = {}
     findit.sync path, (f) ->
-      if f.endsWith('.html')
-        name = f.remove(path + '/').remove('.html')
-        src = fs.readFileSync(f, 'utf-8')
-        templates[name] = src
+      get_templates = (extension) ->
+        if f.endsWith(".#{extension}")
+          name = f.remove(path + '/').remove(".#{extension}")
+          src = fs.readFileSync(f, 'utf-8')
+          templates[name] = src
+
+      get_templates 'html'
+      get_templates 'eco'
     templates
   
   render_js: (templates, context) ->
