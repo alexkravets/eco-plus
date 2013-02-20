@@ -5,7 +5,7 @@ findit   = require 'findit'
 
 prefix = '(?:=|-)'
 quoted = (pattern, idx=1) -> "(\"|\')#{pattern}\\#{idx}"
-single_tag = (name, prefix='') -> 
+single_tag = (name, prefix='') ->
     new RegExp("<%#{prefix}\\s*#{name}\\s*%>", 'g')
 arg_tag = (name, argpattern='.*', prefix='') ->
     new RegExp("<%#{prefix}\\s*#{name}\\s+#{quoted(argpattern)}\\s*%>", 'g')
